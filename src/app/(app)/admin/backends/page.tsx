@@ -14,7 +14,7 @@ interface Backend {
 }
 
 const inputClass =
-  "border-input bg-background w-full rounded-md border px-3 py-2 text-sm";
+  "border-input bg-card w-full rounded-md border px-3 py-2 text-sm";
 
 export default function BackendsPage() {
   const [backends, setBackends] = useState<Backend[]>([]);
@@ -134,7 +134,7 @@ export default function BackendsPage() {
       {error && <p className="text-destructive text-sm">{error}</p>}
       {status && <p className="text-sm text-green-600">{status}</p>}
 
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="overflow-x-auto rounded-xl border bg-card">
         <table className="w-full text-sm">
           <thead className="text-muted-foreground border-b text-left text-xs">
             <tr>
@@ -197,7 +197,7 @@ export default function BackendsPage() {
       </div>
 
       {/* Add backend */}
-      <div className="space-y-3 rounded-lg border p-4">
+      <div className="space-y-3 rounded-xl border bg-card p-4">
         <h3 className="font-medium">Add backend</h3>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-muted-foreground text-xs">

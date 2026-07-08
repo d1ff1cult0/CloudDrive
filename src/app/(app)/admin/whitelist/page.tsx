@@ -14,7 +14,7 @@ interface Entry {
 }
 
 const inputClass =
-  "border-input bg-background rounded-md border px-3 py-2 text-sm";
+  "border-input bg-card rounded-md border px-3 py-2 text-sm";
 
 export default function WhitelistPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -78,7 +78,7 @@ export default function WhitelistPage() {
       </div>
       {error && <p className="text-destructive text-sm">{error}</p>}
 
-      <div className="rounded-lg border">
+      <div className="rounded-xl border bg-card">
         <ul className="divide-y">
           {entries.map((e) => (
             <li key={e.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">

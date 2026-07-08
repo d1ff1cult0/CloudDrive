@@ -17,7 +17,7 @@ interface AdminUser {
 
 const GIB = 1024 ** 3;
 const inputClass =
-  "border-input bg-background w-24 rounded-md border px-2 py-1 text-sm";
+  "border-input bg-card w-24 rounded-md border px-2 py-1 text-sm";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -70,7 +70,7 @@ export default function UsersPage() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Users</h2>
       {error && <p className="text-destructive text-sm">{error}</p>}
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="overflow-x-auto rounded-xl border bg-card">
         <table className="w-full text-sm">
           <thead className="text-muted-foreground border-b text-left text-xs">
             <tr>
@@ -92,7 +92,7 @@ export default function UsersPage() {
                   <td className="px-4 py-2">{u.email}</td>
                   <td className="px-4 py-2">
                     <select
-                      className="border-input bg-background rounded-md border px-2 py-1 text-sm"
+                      className="border-input bg-card rounded-md border px-2 py-1 text-sm"
                       value={d.role}
                       onChange={(e) =>
                         setDrafts((s) => ({

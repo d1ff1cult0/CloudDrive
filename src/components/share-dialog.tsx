@@ -22,7 +22,7 @@ interface ShareRow {
 }
 
 const inputClass =
-  "border-input bg-background w-full rounded-md border px-3 py-2 text-sm";
+  "border-input bg-card w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-primary/60";
 
 export function ShareDialog({
   target,

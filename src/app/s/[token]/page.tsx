@@ -10,13 +10,15 @@ import {
 } from "@/lib/share-service";
 import { SharePasswordGate } from "@/components/share/share-password-gate";
 import { ShareFolderView } from "@/components/share/share-folder-view";
+import { Brand } from "@/components/brand";
 import { formatBytes } from "@/lib/format";
 
 export const runtime = "nodejs";
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
+    <main className="bg-background flex min-h-screen flex-col items-center justify-center gap-6 p-6">
+      <Brand />
       {children}
     </main>
   );
@@ -57,14 +59,17 @@ export default async function SharePage({
   if (contents.type === "file") {
     return (
       <Centered>
-        <div className="flex w-full max-w-sm flex-col items-center gap-4 rounded-lg border p-8 text-center">
-          <h1 className="text-lg font-semibold break-all">{contents.name}</h1>
+        <div className="bg-card border-border flex w-full max-w-sm flex-col items-center gap-4 rounded-2xl border p-8 text-center shadow-sm">
+          <div className="bg-accent flex size-16 items-center justify-center rounded-2xl">
+            <Download className="text-primary size-7" />
+          </div>
+          <h1 className="break-all text-lg font-bold">{contents.name}</h1>
           <p className="text-muted-foreground text-sm">
             {formatBytes(Number(contents.sizeBytes))} · {contents.mimeType}
           </p>
           <a
             href={`/api/share/${token}/download`}
-            className="bg-primary text-primary-foreground inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold"
           >
             <Download className="size-4" /> Download
           </a>

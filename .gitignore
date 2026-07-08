@@ -48,3 +48,6 @@ next-env.d.ts
 /data
 
 /src/generated/prisma
+
+# design mockups (source of the UI redesign, not app code)
+/design
