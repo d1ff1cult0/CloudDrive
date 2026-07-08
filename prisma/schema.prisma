@@ -1,7 +1,7 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Vault — self-hosted cloud storage. Schema from system-prompt §3.
+// Adapted for Prisma 7: `prisma-client` generator + datasource url in
+// prisma.config.ts (not inline env()). Models copied verbatim, extended
+// only additively. See memory: vault-toolchain-deviations.
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +10,205 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ---------- Auth (BetterAuth core tables; adapt field names to the
+// current BetterAuth Prisma adapter spec if they differ) ----------
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          Role      @default(USER)
+  quotaBytes    BigInt    @default(10737418240) // 10 GiB default
+  usedBytes     BigInt    @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions       Session[]
+  accounts       Account[]
+  folders        Folder[]
+  files          File[]
+  uploadSessions UploadSession[]
+  shareLinks     ShareLink[]
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model WhitelistedEmail {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  note      String?
+  createdAt DateTime @default(now())
+  addedById String?
+}
+
+// ---------- Storage backends ----------
+
+enum BackendType {
+  LOCAL
+  S3
+}
+
+model StorageBackend {
+  id        String      @id @default(uuid())
+  name      String      @unique // "drive1", "hetzner-cold", ...
+  type      BackendType
+  enabled   Boolean     @default(true)
+  isDefault Boolean     @default(false) // exactly one default enforced in service layer
+  // LOCAL: { "basePath": "/mnt/drive1" }
+  // S3:    { "endpoint": "...", "region": "...", "bucket": "...",
+  //          "accessKeyId": "...", "secretAccessKey": "...", "forcePathStyle": true }
+  config    Json
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  folders Folder[]
+  files   File[]
+}
+
+// ---------- Filesystem tree ----------
+
+model Folder {
+  id               String   @id @default(uuid())
+  name             String
+  parentId         String?
+  ownerId          String
+  // If set, new files created in this subtree use this backend.
+  // If null, resolution walks up the tree; falls back to the default backend.
+  storageBackendId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  parent   Folder?         @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children Folder[]        @relation("FolderTree")
+  owner    User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  backend  StorageBackend? @relation(fields: [storageBackendId], references: [id])
+  files    File[]
+  shares   ShareLink[]
+
+  @@unique([ownerId, parentId, name])
+  @@index([parentId])
+  @@index([ownerId])
+}
+
+enum FileStatus {
+  UPLOADING
+  READY
+  FAILED
+}
+
+model File {
+  id               String     @id @default(uuid())
+  name             String
+  folderId         String? // null = user root
+  ownerId          String
+  storageBackendId String // resolved & frozen at upload init
+  storageKey       String // physical key: "<ownerId>/<fileId>" (never user-derived)
+  sizeBytes        BigInt
+  mimeType         String     @default("application/octet-stream")
+  checksumSha256   String?
+  status           FileStatus @default(UPLOADING)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  folder  Folder?        @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  owner   User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  backend StorageBackend @relation(fields: [storageBackendId], references: [id])
+  upload  UploadSession?
+  shares  ShareLink[]
+
+  @@unique([ownerId, folderId, name])
+  @@index([folderId])
+  @@index([ownerId, status])
+}
+
+// ---------- Chunked upload state ----------
+
+model UploadSession {
+  id             String   @id @default(uuid())
+  fileId         String   @unique
+  userId         String
+  totalSizeBytes BigInt
+  chunkSizeBytes Int      @default(52428800) // 50 MiB
+  totalChunks    Int
+  nextChunkIndex Int      @default(0) // enforces strict sequential upload
+  s3UploadId     String? // S3 multipart upload id
+  s3Parts        Json? // [{ partNumber, eTag }]
+  expiresAt      DateTime // GC stale sessions
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  file File @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+// ---------- Sharing ----------
+
+model ShareLink {
+  id            String    @id @default(uuid())
+  token         String    @unique // nanoid(21)
+  fileId        String?
+  folderId      String?
+  createdById   String
+  passwordHash  String? // optional, argon2/bcrypt
+  expiresAt     DateTime?
+  downloadCount Int       @default(0)
+  createdAt     DateTime  @default(now())
+
+  file      File?   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  folder    Folder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  createdBy User    @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([fileId])
+  @@index([folderId])
 }
