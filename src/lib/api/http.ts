@@ -2,11 +2,16 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
+import { AppError } from "@/lib/api/errors";
 import { AuthError } from "@/lib/auth-session";
 import { UploadError } from "@/lib/upload/service";
 
 export function errorResponse(err: unknown): NextResponse {
-  if (err instanceof UploadError || err instanceof AuthError) {
+  if (
+    err instanceof UploadError ||
+    err instanceof AuthError ||
+    err instanceof AppError
+  ) {
     return NextResponse.json(
       {
         error: err.code,
