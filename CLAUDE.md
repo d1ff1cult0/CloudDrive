@@ -82,7 +82,9 @@ prisma/             schema.prisma (authoritative), migrations/, seed.ts (backend
 
 ## Running & verifying
 
-- Dev: `docker compose up -d postgres` then `pnpm prisma migrate dev && pnpm prisma db seed && pnpm dev`.
+- Dev: run a local Postgres (the compose one isn't host-published) —
+  `docker run -d --name vault-pg -p 5432:5432 -e POSTGRES_USER=vault -e POSTGRES_PASSWORD=vault -e POSTGRES_DB=vault postgres:16`
+  then `pnpm prisma migrate dev && pnpm prisma db seed && pnpm dev`.
 - Tests: `pnpm test` (vitest — local driver round-trip + path-escape; Range parser).
 - Full stack: `docker compose up -d` (postgres + one-shot `migrate` + `app` on 3033).
 - After changes, run `pnpm build` and `pnpm prisma validate`.

@@ -19,9 +19,8 @@ services:
       POSTGRES_DB: vault
     volumes:
       - vault-pgdata:/var/lib/postgresql/data
-    # Bound to localhost only — convenient for local `pnpm dev`, not public.
-    ports:
-      - "127.0.0.1:5432:5432"
+    # Not published to the host: the app talks to Postgres over the internal
+    # Docker network. (For local `pnpm dev`, run your own Postgres — see README.)
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U vault -d vault"]
       interval: 5s

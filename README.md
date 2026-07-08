@@ -117,7 +117,12 @@ is needed.
 
 ```bash
 pnpm install
-docker compose up -d postgres        # just the database (localhost:5432)
+
+# a local Postgres for dev (the compose one isn't published to the host)
+docker run -d --name vault-pg -p 5432:5432 \
+  -e POSTGRES_USER=vault -e POSTGRES_PASSWORD=vault -e POSTGRES_DB=vault \
+  postgres:16
+
 cp .env.example .env                 # uncomment the DATABASE_URL dev line
 pnpm prisma migrate dev              # apply migrations
 pnpm prisma db seed                  # seed the default backend (./data/drive1)
