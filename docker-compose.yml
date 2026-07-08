@@ -1,0 +1,24 @@
+# Phase 0: Postgres only. The app service is added in Phase 9 (production Docker).
+# Local drives (/mnt/drive1, /mnt/drive2, …) are bind-mounted into the app then.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: vault-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vault
+      POSTGRES_PASSWORD: vault
+      POSTGRES_DB: vault
+    ports:
+      - "5432:5432"
+    volumes:
+      - vault-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vault -d vault"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  vault-pgdata:
