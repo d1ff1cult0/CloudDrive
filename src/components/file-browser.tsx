@@ -8,10 +8,12 @@ import {
   FolderPlus,
   Home,
   Pencil,
+  Settings,
   Trash2,
   Upload,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -42,7 +44,13 @@ interface UploadItem {
 const inputClass =
   "border-input bg-background w-full rounded-md border px-3 py-2 text-sm";
 
-export function FileBrowser({ folderId }: { folderId: string | null }) {
+export function FileBrowser({
+  folderId,
+  isAdmin = false,
+}: {
+  folderId: string | null;
+  isAdmin?: boolean;
+}) {
   const router = useRouter();
   const [data, setData] = useState<TreeData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -220,6 +228,14 @@ export function FileBrowser({ folderId }: { folderId: string | null }) {
       <header className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-xl font-semibold">Vault</h1>
         <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="hover:bg-muted flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm"
+            >
+              <Settings className="size-4" /> Admin
+            </Link>
+          )}
           <ThemeToggle />
           <LogoutButton />
         </div>

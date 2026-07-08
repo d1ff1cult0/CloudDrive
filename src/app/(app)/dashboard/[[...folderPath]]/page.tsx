@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { getSession } from "@/lib/auth-session";
+import { getCurrentUser } from "@/lib/auth-session";
 import { FileBrowser } from "@/components/file-browser";
 
 export const runtime = "nodejs";
@@ -12,11 +12,15 @@ export default async function DashboardPage({
 }: {
   params: Promise<{ folderPath?: string[] }>;
 }) {
-  const session = await getSession();
-  if (!session?.user) redirect("/login");
+  let user;
+  try {
+    user = await getCurrentUser();
+  } catch {
+    redirect("/login");
+  }
 
   const { folderPath } = await params;
   const folderId = folderPath?.[folderPath.length - 1] ?? null;
 
-  return <FileBrowser folderId={folderId} />;
+  return <FileBrowser folderId={folderId} isAdmin={user.role === "ADMIN"} />;
 }
