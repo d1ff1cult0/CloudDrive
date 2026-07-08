@@ -10,8 +10,10 @@ const PUBLIC_PAGES = ["/login", "/signup"];
 function isPublicPath(pathname: string): boolean {
   // BetterAuth endpoints and public share routes stay open.
   if (pathname.startsWith("/api/auth")) return true;
-  if (pathname.startsWith("/api/share")) return true; // public share API (Phase 8)
-  if (pathname.startsWith("/s/")) return true; // public share pages (Phase 8)
+  // Public token routes only (/api/share/<token>/...). NOT the owner API
+  // /api/shares, which must stay behind the session gate.
+  if (pathname.startsWith("/api/share/")) return true;
+  if (pathname.startsWith("/s/")) return true; // public share pages
   return false;
 }
 

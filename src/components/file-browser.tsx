@@ -9,6 +9,7 @@ import {
   Home,
   Pencil,
   Settings,
+  Share2,
   Trash2,
   Upload,
   X,
@@ -19,6 +20,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { LogoutButton } from "@/components/logout-button";
 import { Modal } from "@/components/modal";
+import { ShareDialog, type ShareTarget } from "@/components/share-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { formatBytes, formatDate } from "@/lib/format";
@@ -66,6 +68,7 @@ export function FileBrowser({
   const [renameValue, setRenameValue] = useState("");
 
   const [deleteTarget, setDeleteTarget] = useState<{ kind: "folder" | "file"; id: string; name: string } | null>(null);
+  const [shareTarget, setShareTarget] = useState<ShareTarget | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -366,6 +369,9 @@ export function FileBrowser({
                   {formatDate(f.createdAt)}
                 </span>
                 <RowActions
+                  onShare={() =>
+                    setShareTarget({ kind: "folder", id: f.id, name: f.name })
+                  }
                   onRename={() => {
                     setRenaming({ kind: "folder", id: f.id });
                     setRenameValue(f.name);
@@ -405,6 +411,9 @@ export function FileBrowser({
                     <Download className="size-4" />
                   </a>
                   <RowActions
+                    onShare={() =>
+                      setShareTarget({ kind: "file", id: f.id, name: f.name })
+                    }
                     onRename={() => {
                       setRenaming({ kind: "file", id: f.id });
                       setRenameValue(f.name);
@@ -468,6 +477,9 @@ export function FileBrowser({
         </div>
       </Modal>
 
+      {/* Share dialog */}
+      <ShareDialog target={shareTarget} onClose={() => setShareTarget(null)} />
+
       {/* Delete confirmation */}
       <Modal
         open={deleteTarget !== null}
@@ -499,14 +511,19 @@ export function FileBrowser({
 }
 
 function RowActions({
+  onShare,
   onRename,
   onDelete,
 }: {
+  onShare: () => void;
   onRename: () => void;
   onDelete: () => void;
 }) {
   return (
     <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+      <button className="hover:bg-muted rounded p-1.5" onClick={onShare} aria-label="Share">
+        <Share2 className="size-4" />
+      </button>
       <button className="hover:bg-muted rounded p-1.5" onClick={onRename} aria-label="Rename">
         <Pencil className="size-4" />
       </button>
