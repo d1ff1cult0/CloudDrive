@@ -21,6 +21,11 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
+          // Bootstrap: the very first account to register is allowed through
+          // (and promoted to ADMIN in the after-hook), regardless of whitelist.
+          const userCount = await prisma.user.count();
+          if (userCount === 0) return { data: user };
+
           const email = user.email?.trim();
           const allowed = email
             ? await prisma.whitelistedEmail.findFirst({
@@ -35,6 +40,23 @@ export const auth = betterAuth({
             });
           }
           return { data: user };
+        },
+        after: async (user) => {
+          // If this is the only user, they are the founding admin.
+          const userCount = await prisma.user.count();
+          if (userCount === 1) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { role: "ADMIN", emailVerified: true },
+            });
+            await prisma.whitelistedEmail
+              .upsert({
+                where: { email: user.email },
+                update: {},
+                create: { email: user.email, note: "First user (admin)" },
+              })
+              .catch(() => {});
+          }
         },
       },
     },
