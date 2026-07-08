@@ -4,7 +4,7 @@ import type { ReadableStream as NodeWebReadableStream } from "node:stream/web";
 import { NextResponse } from "next/server";
 
 import { errorResponse } from "@/lib/api/http";
-import { getCurrentUser } from "@/lib/dev-auth";
+import { getCurrentUser } from "@/lib/auth-session";
 import { receiveChunk, UploadError } from "@/lib/upload/service";
 
 export const runtime = "nodejs";

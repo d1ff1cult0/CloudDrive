@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { errorResponse } from "@/lib/api/http";
-import { getCurrentUser } from "@/lib/dev-auth";
+import { getCurrentUser } from "@/lib/auth-session";
 import { finalizeUpload } from "@/lib/upload/service";
 import { completeUploadSchema } from "@/lib/validators/upload";
 

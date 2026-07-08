@@ -8,14 +8,15 @@
 import "dotenv/config";
 import path from "node:path";
 import fs from "node:fs";
+import { hashPassword } from "better-auth/crypto";
 import { Role, BackendType } from "../src/generated/prisma/client";
 import { prisma } from "../src/lib/db";
 
-const ADMIN_EMAIL = "admin@example.com";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "admin@example.com";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "admin12345";
 
 async function main() {
-  // 1. Admin user. Password/credentials are wired in Phase 5 (BetterAuth);
-  //    Phases 2-4 dev-auth shim just reads this seeded admin row.
+  // 1. Admin user (role ADMIN).
   const admin = await prisma.user.upsert({
     where: { email: ADMIN_EMAIL },
     update: { role: Role.ADMIN },
@@ -26,6 +27,30 @@ async function main() {
       emailVerified: true,
     },
   });
+
+  // 1b. Admin credential account so email+password login works. BetterAuth
+  //     stores credentials as an Account with providerId "credential" and
+  //     accountId = user id; hashPassword() matches BetterAuth's default verify.
+  const passwordHash = await hashPassword(ADMIN_PASSWORD);
+  const existingCred = await prisma.account.findFirst({
+    where: { userId: admin.id, providerId: "credential" },
+    select: { id: true },
+  });
+  if (existingCred) {
+    await prisma.account.update({
+      where: { id: existingCred.id },
+      data: { password: passwordHash },
+    });
+  } else {
+    await prisma.account.create({
+      data: {
+        userId: admin.id,
+        accountId: admin.id,
+        providerId: "credential",
+        password: passwordHash,
+      },
+    });
+  }
 
   // 2. Whitelist entry for the admin (signup = whitelist only, from Phase 5 on).
   await prisma.whitelistedEmail.upsert({
@@ -60,6 +85,7 @@ async function main() {
 
   console.log("Seed complete:");
   console.log(`  admin user    → ${ADMIN_EMAIL} (id ${admin.id}, role ADMIN)`);
+  console.log(`  admin login   → ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
   console.log(`  whitelist     → ${ADMIN_EMAIL}`);
   console.log(`  default drive → drive1 (LOCAL, basePath ${basePath})`);
 }

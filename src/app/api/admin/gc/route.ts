@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { errorResponse } from "@/lib/api/http";
-import { getCurrentUser } from "@/lib/dev-auth";
+import { requireAdmin } from "@/lib/auth-session";
 import { cleanupStaleUploadSessions } from "@/lib/jobs/cleanup";
 
 export const runtime = "nodejs";
@@ -17,10 +17,7 @@ export async function POST(req: Request) {
       : false;
 
     if (!authorized) {
-      const user = await getCurrentUser();
-      if (user.role !== "ADMIN") {
-        return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
-      }
+      await requireAdmin();
     }
 
     const result = await cleanupStaleUploadSessions();
